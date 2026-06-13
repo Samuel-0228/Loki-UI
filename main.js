@@ -78,9 +78,9 @@ function createTexturedPlane(imagePath, defaultScale = 1) {
 // --- ALIGNMENT CONFIGURATION ---
 
 const ALIGN = {
-    table: { x: 0, y: -2, z: -5, scale: 5.0 },
-    leftChair: { x: -5, y: -4.0, z: -7, scale: 4.2 },
-    rightChair: { x: 5, y: -4.0, z: -7, scale: 4.2 }
+    table: { x: 0, y: -3, z: -5, scale: 5.0 },
+    leftChair: { x: -4, y: -4.0, z: -7, scale: 4 },
+    rightChair: { x: 4, y: -4.0, z: -7, scale: 4 }
 };
 
 // 1. Central Table
@@ -89,7 +89,7 @@ table.position.set(ALIGN.table.x, ALIGN.table.y, ALIGN.table.z);
 imageGroup.add(table);
 
 // 2. Left Chair
-const leftChair = createTexturedPlane('/Left-chair.jpg', ALIGN.leftChair.scale);
+const leftChair = createTexturedPlane('/Left-chair.png', ALIGN.leftChair.scale);
 leftChair.position.set(ALIGN.leftChair.x, ALIGN.leftChair.y, ALIGN.leftChair.z);
 imageGroup.add(leftChair);
 
