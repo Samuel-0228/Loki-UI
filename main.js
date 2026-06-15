@@ -98,6 +98,69 @@ const rightChair = createTexturedPlane('/Right-chair.jpg', ALIGN.rightChair.scal
 rightChair.position.set(ALIGN.rightChair.x, ALIGN.rightChair.y, ALIGN.rightChair.z);
 imageGroup.add(rightChair);
 
+// --- NEW THREE.JS MOTION LAYERS ---
+// Motion 1 - Ambient Floating Particle Field
+const particlesGeometry = new THREE.BufferGeometry();
+const particlesCount = 120;
+const posArray = new Float32Array(particlesCount * 3);
+const seedsArray = new Float32Array(particlesCount);
+const originYArray = new Float32Array(particlesCount);
+
+for(let i = 0; i < particlesCount; i++) {
+    posArray[i*3] = (Math.random() - 0.5) * 20; // x: [-10, 10]
+    posArray[i*3+1] = (Math.random() - 0.5) * 12; // y: [-6, 6]
+    posArray[i*3+2] = (Math.random() - 0.5) * 10 - 3; // z: [-8, 2]
+    
+    seedsArray[i] = Math.random() * 100;
+    originYArray[i] = posArray[i*3+1];
+}
+
+particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+particlesGeometry.setAttribute('seed', new THREE.BufferAttribute(seedsArray, 1));
+particlesGeometry.setAttribute('originY', new THREE.BufferAttribute(originYArray, 1));
+
+const particlesMaterial = new THREE.PointsMaterial({
+    size: 0.03,
+    color: '#ff6b00',
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+});
+
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
+
+// Motion 2 - Volumetric Light Cone
+const coneGeometry = new THREE.CylinderGeometry(0, 3, 10, 32, 1, true);
+const coneMaterial = new THREE.MeshBasicMaterial({
+    color: '#ffaa00',
+    transparent: true,
+    opacity: 0.04,
+    side: THREE.BackSide,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+});
+
+const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+cone.position.set(0, 6, -4);
+cone.rotation.x = Math.PI;
+scene.add(cone);
+
+// Motion 3 - Orbiting Ring
+const ringGeometry = new THREE.TorusGeometry(1.6, 0.004, 8, 200);
+const ringMaterial = new THREE.MeshBasicMaterial({
+    color: '#ff6b00',
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending
+});
+
+const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+ring.position.set(0, -2.5, -5);
+scene.add(ring);
+
+gsap.to(ringMaterial, { opacity: 0.35, duration: 3, delay: 2.5, ease: "power2.out" });
+
 // Resize handler
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -106,8 +169,38 @@ window.addEventListener('resize', () => {
 });
 
 // Render loop
+const clock = new THREE.Clock();
+
 function animate() {
     requestAnimationFrame(animate);
+    
+    const time = clock.getElapsedTime();
+    
+    // Animate Particles
+    if (typeof particles !== 'undefined') {
+        const positions = particles.geometry.attributes.position.array;
+        const origins = particles.geometry.attributes.originY.array;
+        const seeds = particles.geometry.attributes.seed.array;
+        
+        for(let i = 0; i < particlesCount; i++) {
+            positions[i*3+1] = origins[i] + Math.sin(time * 0.4 + seeds[i]) * 0.3;
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+        particles.rotation.y += 0.0008;
+    }
+    
+    // Animate Cone
+    if (typeof coneMaterial !== 'undefined' && typeof cone !== 'undefined') {
+        coneMaterial.opacity = 0.04 + Math.sin(time * 0.6) * 0.015;
+        cone.rotation.y += 0.0003;
+    }
+    
+    // Animate Ring
+    if (typeof ring !== 'undefined') {
+        ring.rotation.x = Math.PI / 2 + Math.sin(time * 0.2) * 0.08;
+        ring.rotation.z += 0.002;
+    }
+
     renderer.render(scene, camera);
 }
 animate();
@@ -167,4 +260,54 @@ document.addEventListener('mousemove', (e) => {
         duration: 1.5,
         ease: "power2.out"
     });
+});
+
+// --- UI & Scroll Behaviors ---
+
+// Navbar scroll behavior
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('.navbar');
+  if (nav) {
+    if (window.scrollY > 60) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  }
+});
+
+// GSAP scroll-reveal for panels and menu items
+gsap.utils.toArray('.glass-panel').forEach((panel) => {
+  gsap.fromTo(panel,
+    { opacity: 0, y: 50 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: 1.2,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: panel,
+        start: 'top 80%',
+        toggleActions: 'play none none reverse'
+      }
+    }
+  );
+});
+
+gsap.utils.toArray('.menu-item').forEach((item, i) => {
+  gsap.fromTo(item,
+    { opacity: 0, y: 30 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: 0.8,
+      ease: 'power2.out',
+      delay: i * 0.12,
+      scrollTrigger: {
+        trigger: item,
+        start: 'top 85%',
+        toggleActions: 'play none none reverse'
+      }
+    }
+  );
 });
